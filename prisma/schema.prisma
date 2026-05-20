@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  directUrl = env("DATABASE_URL")
 }
 
 enum TransactionType {
@@ -24,10 +24,11 @@ enum PaymentType {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String         @id @default(cuid())
+  email        String         @unique
   password     String
-  createdAt    DateTime      @default(now())
+  createdAt    DateTime       @default(now())
+
   transactions Transaction[]
   budgets      Budget[]
   savingsGoals SavingsGoal[]
@@ -38,60 +39,61 @@ model User {
 model Transaction {
   id        String          @id @default(cuid())
   userId    String
+  user      User            @relation(fields: [userId], references: [id])
+
   type      TransactionType
   category  String
-  amount    Decimal         @db.Decimal(12, 2)
-  date      DateTime
+  amount    Float
+  date      DateTime        @default(now())
   source    Source
-  note      String?
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime        @default(now())
 
-  @@index([userId, source, date])
+  createdAt DateTime        @default(now())
 }
 
 model Budget {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  category    String
-  limitAmount Decimal  @db.Decimal(12, 2)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
 
-  @@unique([userId, category])
+  category    String
+  limitAmount Float
+
+  createdAt   DateTime  @default(now())
 }
 
 model SavingsGoal {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
   name          String
-  targetAmount  Decimal  @db.Decimal(12, 2)
-  currentAmount Decimal  @db.Decimal(12, 2) @default(0)
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetAmount  Float
+  currentAmount Float     @default(0)
+
+  createdAt     DateTime  @default(now())
 }
 
 model Loan {
   id               String    @id @default(cuid())
   userId           String
-  name             String
-  amount           Decimal   @db.Decimal(12, 2)
-  interestRate     Decimal   @db.Decimal(5, 2)
-  monthlyPayment   Decimal   @db.Decimal(12, 2)
-  remainingBalance Decimal   @db.Decimal(12, 2)
-  dueDay           Int       @default(1)
-  lastPaidAt       DateTime?
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id])
+
+  amount           Float
+  interestRate     Float
+  monthlyPayment   Float
+  remainingBalance Float
+
+  createdAt        DateTime  @default(now())
 }
 
 model CafeSale {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
-  date      DateTime
-  cash      Decimal  @db.Decimal(12, 2) @default(0)
-  card      Decimal  @db.Decimal(12, 2) @default(0)
-  qpay      Decimal  @db.Decimal(12, 2) @default(0)
-  note      String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  user      User         @relation(fields: [userId], references: [id])
 
-  @@index([userId, date])
+  amount    Float
+  payment   PaymentType
+  date      DateTime     @default(now())
+
+  createdAt DateTime     @default(now())
 }
